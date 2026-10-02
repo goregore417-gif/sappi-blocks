@@ -5,21 +5,27 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#08101f">
 <title>SAPPI BLOCKS</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-html,body{margin:0;min-height:100%;background:#08101f;color:#fff;font-family:system-ui,-apple-system,sans-serif;overscroll-behavior:none}
-body{touch-action:none}.app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px 10px 14px;gap:7px}
-.top{width:min(96vw,440px);display:flex;align-items:center;justify-content:space-between}.title{font-weight:900;letter-spacing:.08em}.stats{font-size:12px;display:flex;gap:9px}
-.gameRow{display:flex;gap:8px;align-items:flex-start}#game{background:#050b15;border:2px solid #33435d;border-radius:9px;width:min(72vw,300px);height:auto;box-shadow:0 8px 30px #0008;touch-action:none}
-.side{width:86px;display:flex;flex-direction:column;gap:7px}.panel{background:#111b2d;border:1px solid #33435d;border-radius:9px;padding:6px;text-align:center;font-size:11px;font-weight:800}
-#next{width:72px;height:72px}.small{width:100%;height:38px;border:0;border-radius:9px;font-weight:800;background:#e8edf7;color:#111}
-#msg{height:18px;font-size:13px;font-weight:900;text-align:center}.controls{display:grid;grid-template-columns:repeat(3,72px);gap:7px}
-.ctrl{height:52px;border:0;border-radius:13px;font-size:23px;font-weight:900;background:#e9eef7;color:#101827;box-shadow:0 3px 0 #7f8ca3;touch-action:none}
-.ctrl:active,.held{transform:translateY(2px);box-shadow:0 1px 0 #7f8ca3;background:#cfd8e7}.hint{font-size:10px;opacity:.65;text-align:center;max-width:430px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08101f;color:#fff;font-family:system-ui,-apple-system,sans-serif;overscroll-behavior:none;touch-action:none}
+body{position:fixed;inset:0}
+.app{width:100%;height:100dvh;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;align-items:center;justify-items:center;padding:max(5px,env(safe-area-inset-top)) 8px max(6px,env(safe-area-inset-bottom));gap:5px;overflow:hidden;touch-action:none}
+.top{width:min(96vw,430px);display:flex;align-items:center;justify-content:space-between;min-height:28px}.title{font-size:clamp(14px,4vw,19px);font-weight:900;letter-spacing:.06em;white-space:nowrap}.stats{font-size:10px;display:flex;gap:7px;white-space:nowrap}
+.gameRow{height:100%;max-height:100%;display:flex;gap:6px;align-items:flex-start;justify-content:center;min-height:0}
+#game{display:block;background:#050b15;border:2px solid #33435d;border-radius:8px;width:auto;height:min(100%,calc((100vw - 104px)*2));max-width:calc(100vw - 104px);aspect-ratio:1/2;box-shadow:0 6px 24px #0008;touch-action:none}
+.side{width:82px;display:flex;flex-direction:column;gap:5px}.panel{background:#111b2d;border:1px solid #33435d;border-radius:8px;padding:5px;text-align:center;font-size:10px;font-weight:800}
+#next{width:68px;height:68px;touch-action:none}.small{width:100%;height:34px;border:0;border-radius:8px;font-size:10px;font-weight:800;background:#e8edf7;color:#111;touch-action:none}
+#msg{height:16px;font-size:12px;font-weight:900;text-align:center}.controls{display:grid;grid-template-columns:repeat(6,minmax(45px,62px));gap:5px;width:min(98vw,397px);justify-content:center}
+.ctrl{height:46px;border:0;border-radius:11px;font-size:20px;font-weight:900;background:#e9eef7;color:#101827;box-shadow:0 3px 0 #7f8ca3;touch-action:none}
+.ctrl:active,.held{transform:translateY(2px);box-shadow:0 1px 0 #7f8ca3;background:#cfd8e7}.hint{font-size:9px;opacity:.6;text-align:center;max-width:430px;white-space:nowrap}
 .flash{animation:flash .16s 2}@keyframes flash{50%{filter:brightness(2)}}
+@media (max-width:390px){.side{width:74px}#game{max-width:calc(100vw - 94px);height:min(100%,calc((100vw - 94px)*2))}#next{width:60px;height:60px}.controls{grid-template-columns:repeat(6,minmax(42px,56px))}.ctrl{height:43px}.hint{font-size:8px}}
 </style></head>
 <body><div class="app">
-<div class="top"><div class="title">SAPPI BLOCKS <small>v0.3</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
+<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
 <div class="gameRow"><canvas id="game" width="300" height="600"></canvas><div class="side">
 <div class="panel">NEXT<canvas id="next" width="72" height="72"></canvas></div>
 <button class="small" id="pause">⏸ PAUSE</button><button class="small" id="sound">🔊 SOUND</button><button class="small" id="music">♫ BGM</button><button class="small" id="new">NEW</button>
@@ -78,9 +84,25 @@ cv.addEventListener("pointermove",e=>{if(!dragging)return;e.preventDefault();let
 cv.addEventListener("pointerup",e=>{if(!dragging)return;e.preventDefault();dragging=false;let tx=e.clientX-sx,ty=e.clientY-sy;if(!moved&&Math.abs(tx)<15&&Math.abs(ty)<15)rotate();else if(ty>55&&Math.abs(ty)>Math.abs(tx)*1.15)hard()});
 cv.addEventListener("pointercancel",()=>dragging=false);
 
+
+// iPhone Safari: keep all game gestures inside the game instead of the browser.
+const gameUI=document.querySelector(".app");
+["touchstart","touchmove","touchend","touchcancel"].forEach(type=>{
+  gameUI.addEventListener(type,e=>{ e.preventDefault(); },{passive:false});
+});
+["dblclick","contextmenu","selectstart","dragstart"].forEach(type=>{
+  gameUI.addEventListener(type,e=>e.preventDefault());
+});
+let lastTapGuard=0;
+gameUI.addEventListener("touchend",e=>{
+  const now=Date.now();
+  if(now-lastTapGuard<400)e.preventDefault();
+  lastTapGuard=now;
+},{passive:false});
+
 document.addEventListener("contextmenu",e=>e.preventDefault());
 ["gesturestart","gesturechange","gestureend"].forEach(n=>document.addEventListener(n,e=>e.preventDefault(),{passive:false}));
-let lastTouchEnd=0;document.addEventListener("touchend",e=>{let now=Date.now();if(now-lastTouchEnd<=350)e.preventDefault();lastTouchEnd=now},{passive:false});
+
 document.addEventListener("selectstart",e=>e.preventDefault());
 document.addEventListener("dragstart",e=>e.preventDefault());
 document.body.addEventListener("pointerdown",()=>{try{ac()}catch(e){}},{once:true});
