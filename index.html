@@ -1,24 +1,74 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>SAPPI BLOCKS</title>
-<style>*{box-sizing:border-box}body{margin:0;background:#0b1020;color:white;font-family:system-ui;touch-action:manipulation}.w{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:10px;gap:8px}h1{font-size:21px;margin:0}.s{display:flex;gap:15px;font-weight:700}canvas{background:#07101d;border:2px solid #34435d;border-radius:8px;max-height:62vh;width:auto;max-width:92vw}.c{display:grid;grid-template-columns:repeat(3,72px);gap:8px}button{height:52px;border:0;border-radius:12px;font-size:23px;font-weight:800}.m{height:22px;font-weight:800}</style></head>
-<body><div class="w"><h1>SAPPI BLOCKS</h1><div class="s"><span>Score <b id="sc">0</b></span><span>Lines <b id="li">0</b></span><span>Lv <b id="lv">1</b></span></div><canvas id="g" width="300" height="600"></canvas><div id="msg" class="m"></div><div class="c"><button id="l">←</button><button id="r">↻</button><button id="rr">→</button><button id="d">↓</button><button id="hd">⤓</button><button id="nw">NEW</button></div></div>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#08101f">
+<title>SAPPI BLOCKS</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:#08101f;color:#fff;font-family:system-ui,-apple-system,sans-serif;overscroll-behavior:none}
+body{touch-action:none}.app{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:8px 10px 14px;gap:7px}
+.top{width:min(96vw,440px);display:flex;align-items:center;justify-content:space-between}.title{font-weight:900;letter-spacing:.08em}
+.stats{font-size:12px;display:flex;gap:9px}.gameRow{display:flex;gap:8px;align-items:flex-start}
+canvas#game{background:#050b15;border:2px solid #33435d;border-radius:9px;width:min(72vw,300px);height:auto;box-shadow:0 8px 30px #0008}
+.side{width:86px;display:flex;flex-direction:column;gap:7px}.panel{background:#111b2d;border:1px solid #33435d;border-radius:9px;padding:6px;text-align:center;font-size:11px;font-weight:800}
+#next{width:72px;height:72px}.small{width:100%;height:38px;border:0;border-radius:9px;font-weight:800;background:#e8edf7;color:#111}
+#msg{height:18px;font-size:13px;font-weight:900;text-align:center}.controls{display:grid;grid-template-columns:repeat(3,72px);gap:7px}
+.ctrl{height:52px;border:0;border-radius:13px;font-size:23px;font-weight:900;background:#e9eef7;color:#101827;box-shadow:0 3px 0 #7f8ca3;user-select:none}
+.ctrl:active,.held{transform:translateY(2px);box-shadow:0 1px 0 #7f8ca3;background:#cfd8e7}.hint{font-size:10px;opacity:.65;text-align:center}
+.flash{animation:flash .16s 2}@keyframes flash{50%{filter:brightness(2)}}
+</style></head>
+<body><div class="app">
+<div class="top"><div class="title">SAPPI BLOCKS <small>v0.2</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
+<div class="gameRow"><canvas id="game" width="300" height="600"></canvas><div class="side">
+<div class="panel">NEXT<canvas id="next" width="72" height="72"></canvas></div>
+<button class="small" id="pause">⏸ PAUSE</button><button class="small" id="sound">🔊 SOUND</button><button class="small" id="music">♫ BGM</button><button class="small" id="new">NEW</button>
+</div></div><div id="msg"></div>
+<div class="controls"><button class="ctrl" id="left">←</button><button class="ctrl" id="rotate">↻</button><button class="ctrl" id="right">→</button><button class="ctrl" id="down">↓</button><button class="ctrl" id="drop">⤓</button><button class="ctrl" id="pause2">⏸</button></div>
+<div class="hint">盤面タップ＝回転 ／ 左右スワイプ＝移動 ／ 下スワイプ＝一気落とし ／ ←→↓は長押し対応</div>
+</div>
 <script>
 "use strict";
-const cv=document.getElementById("g"),cx=cv.getContext("2d"),W=10,H=20,S=30,C=["","#4dd0e1","#ffd54f","#ba68c8","#66bb6a","#ef5350","#42a5f5","#ffa726"],P=[[[1,1,1,1]],[[2,2],[2,2]],[[0,3,0],[3,3,3]],[[0,4,4],[4,4,0]],[[5,5,0],[0,5,5]],[[6,0,0],[6,6,6]],[[0,0,7],[7,7,7]]];
-let b,p,score,lines,level,last=0,over=false;
-function reset(){b=Array.from({length:H},()=>Array(W).fill(0));score=lines=0;level=1;over=false;last=0;spawn();ui();msg.textContent=""}
-function spawn(){let n=Math.floor(Math.random()*7);p={m:P[n].map(x=>x.slice()),x:Math.floor((W-P[n][0].length)/2),y:0};if(hit(p.x,p.y,p.m)){over=true;msg.textContent="GAME OVER"}}
-function hit(x,y,m){for(let j=0;j<m.length;j++)for(let i=0;i<m[j].length;i++)if(m[j][i]&&(x+i<0||x+i>=W||y+j>=H||(y+j>=0&&b[y+j][x+i])))return true;return false}
-function merge(){p.m.forEach((row,j)=>row.forEach((v,i)=>{if(v&&p.y+j>=0)b[p.y+j][p.x+i]=v}));clear();spawn()}
-function clear(){let n=0;for(let y=H-1;y>=0;y--)if(b[y].every(Boolean)){b.splice(y,1);b.unshift(Array(W).fill(0));n++;y++}if(n){lines+=n;score+=[0,100,300,500,800][n]*level;level=1+Math.floor(lines/10)}}
-function move(dx,dy){if(over)return false;if(!hit(p.x+dx,p.y+dy,p.m)){p.x+=dx;p.y+=dy;return true}if(dy){merge();ui()}return false}
-function rot(){if(over)return;let m=p.m[0].map((_,i)=>p.m.map(x=>x[i]).reverse());for(let k of [0,-1,1,-2,2])if(!hit(p.x+k,p.y,m)){p.x+=k;p.m=m;break}}
-function hard(){if(over)return;let n=0;while(!hit(p.x,p.y+1,p.m)){p.y++;n++}score+=n*2;merge();ui()}
-function ui(){sc.textContent=score;li.textContent=lines;lv.textContent=level}
-function cell(x,y,v){cx.fillStyle=C[v];cx.fillRect(x*S+1,y*S+1,S-2,S-2)}
-function draw(){cx.fillStyle="#07101d";cx.fillRect(0,0,300,600);cx.strokeStyle="#17243b";for(let x=0;x<=W;x++){cx.beginPath();cx.moveTo(x*S,0);cx.lineTo(x*S,600);cx.stroke()}for(let y=0;y<=H;y++){cx.beginPath();cx.moveTo(0,y*S);cx.lineTo(300,y*S);cx.stroke()}b.forEach((row,y)=>row.forEach((v,x)=>v&&cell(x,y,v)));p&&p.m.forEach((row,j)=>row.forEach((v,i)=>v&&p.y+j>=0&&cell(p.x+i,p.y+j,v)))}
-function loop(t=0){if(!over&&t-last>Math.max(120,800-(level-1)*60)){move(0,1);last=t}draw();requestAnimationFrame(loop)}
-l.onclick=()=>move(-1,0);rr.onclick=()=>move(1,0);d.onclick=()=>{if(move(0,1)){score++;ui()}};r.onclick=rot;hd.onclick=hard;nw.onclick=reset;
-document.addEventListener("keydown",e=>{if(e.key==="ArrowLeft")move(-1,0);else if(e.key==="ArrowRight")move(1,0);else if(e.key==="ArrowDown")move(0,1);else if(e.key==="ArrowUp")rot();else if(e.code==="Space"){e.preventDefault();hard()}});
-let sx=0,sy=0;cv.addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});cv.addEventListener("touchend",e=>{let dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;if(Math.abs(dx)<20&&Math.abs(dy)<20)rot();else if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1,0);else if(dy>40)hard()},{passive:true});
+const cv=document.querySelector("#game"),ctx=cv.getContext("2d"),nc=document.querySelector("#next"),nx=nc.getContext("2d");
+const W=10,H=20,S=30,colors=["","#39d8ee","#ffe04d","#c66bff","#5be27c","#ff5e66","#5595ff","#ff9e45"];
+const shapes=[[[1,1,1,1]],[[2,2],[2,2]],[[0,3,0],[3,3,3]],[[0,4,4],[4,4,0]],[[5,5,0],[0,5,5]],[[6,0,0],[6,6,6]],[[0,0,7],[7,7,7]]];
+let board,piece,nextId,score,lines,level,over,paused,last=0,clearing=[],clearUntil=0;
+let soundOn=true,musicOn=false,audio=null,bgmTimer=null;
+const $=id=>document.getElementById(id);
+function cloneShape(id){return shapes[id].map(r=>r.slice())}
+function rand(){return Math.floor(Math.random()*shapes.length)}
+function reset(){board=Array.from({length:H},()=>Array(W).fill(0));score=lines=0;level=1;over=paused=false;last=0;clearing=[];nextId=rand();spawn();ui();$("msg").textContent="";drawNext()}
+function spawn(){let id=nextId;nextId=rand();piece={m:cloneShape(id),x:Math.floor((W-shapes[id][0].length)/2),y:0};drawNext();if(hit(piece.x,piece.y,piece.m)){over=true;$("msg").textContent="GAME OVER";tone(90,.35,"sawtooth")}}
+function hit(x,y,m){for(let j=0;j<m.length;j++)for(let i=0;i<m[j].length;i++)if(m[j][i]&&(x+i<0||x+i>=W||y+j>=H||(y+j>=0&&board[y+j][x+i])))return true;return false}
+function merge(){piece.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&piece.y+j>=0)board[piece.y+j][piece.x+i]=v}));findLines()}
+function findLines(){let rows=[];for(let y=0;y<H;y++)if(board[y].every(Boolean))rows.push(y);if(!rows.length){spawn();return}clearing=rows;clearUntil=performance.now()+220;lineSound(rows.length);$("msg").textContent=["","SINGLE!","DOUBLE!!","TRIPLE!!!","QUAD!!!!"][rows.length]||"CLEAR!";cv.classList.remove("flash");void cv.offsetWidth;cv.classList.add("flash")}
+function finishClear(){let n=clearing.length;[...clearing].sort((a,b)=>b-a).forEach(y=>{board.splice(y,1);board.unshift(Array(W).fill(0))});lines+=n;score+=[0,100,320,560,900][n]*level;level=1+Math.floor(lines/10);clearing=[];ui();spawn()}
+function move(dx,dy){if(over||paused||clearing.length)return false;if(!hit(piece.x+dx,piece.y+dy,piece.m)){piece.x+=dx;piece.y+=dy;if(dx)tone(230,.025);return true}if(dy){merge();ui()}return false}
+function rotate(){if(over||paused||clearing.length)return;let m=piece.m[0].map((_,i)=>piece.m.map(r=>r[i]).reverse());for(let k of [0,-1,1,-2,2])if(!hit(piece.x+k,piece.y,m)){piece.x+=k;piece.m=m;tone(420,.04);break}}
+function hard(){if(over||paused||clearing.length)return;let n=0;while(!hit(piece.x,piece.y+1,piece.m)){piece.y++;n++}score+=n*2;tone(130,.07,"square");merge();ui()}
+function ghostY(){let y=piece.y;while(!hit(piece.x,y+1,piece.m))y++;return y}
+function ui(){$("score").textContent=score;$("lines").textContent=lines;$("level").textContent=level;$("pause").textContent=paused?"▶ RESUME":"⏸ PAUSE"}
+function cell(c,x,y,v,a=1){c.globalAlpha=a;c.fillStyle=colors[v];c.fillRect(x*S+1,y*S+1,S-2,S-2);c.globalAlpha=1}
+function draw(){ctx.fillStyle="#050b15";ctx.fillRect(0,0,300,600);ctx.strokeStyle="#142137";for(let x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*S,0);ctx.lineTo(x*S,600);ctx.stroke()}for(let y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*S);ctx.lineTo(300,y*S);ctx.stroke()}
+board.forEach((r,y)=>r.forEach((v,x)=>{if(v)cell(ctx,x,y,v,clearing.includes(y)?0.3:1)}));
+if(piece&&!over){let gy=ghostY();piece.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&gy+j>=0)cell(ctx,piece.x+i,gy+j,v,.18)}));piece.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&piece.y+j>=0)cell(ctx,piece.x+i,piece.y+j,v)}))}
+if(paused){ctx.fillStyle="#000b";ctx.fillRect(0,0,300,600);ctx.fillStyle="#fff";ctx.font="bold 28px system-ui";ctx.textAlign="center";ctx.fillText("PAUSED",150,300)}}
+function drawNext(){nx.fillStyle="#0a1220";nx.fillRect(0,0,72,72);let m=shapes[nextId],bs=15,ox=(72-m[0].length*bs)/2,oy=(72-m.length*bs)/2;m.forEach((r,j)=>r.forEach((v,i)=>{if(v){nx.fillStyle=colors[v];nx.fillRect(ox+i*bs+1,oy+j*bs+1,bs-2,bs-2)}}))}
+function loop(t=0){if(clearing.length&&t>=clearUntil)finishClear();if(!over&&!paused&&!clearing.length&&t-last>Math.max(110,780-(level-1)*55)){move(0,1);last=t}draw();requestAnimationFrame(loop)}
+function ac(){if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume();return audio}
+function tone(freq,d=.05,type="sine",vol=.035,delay=0){if(!soundOn)return;let a=ac(),o=a.createOscillator(),g=a.createGain(),now=a.currentTime+delay;o.type=type;o.frequency.setValueAtTime(freq,now);g.gain.setValueAtTime(vol,now);g.gain.exponentialRampToValueAtTime(.001,now+d);o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+d)}
+function lineSound(n){for(let i=0;i<n;i++)tone(420+i*150,.12,i==3?"sawtooth":"square",.045,i*.055);if(n===4)tone(1100,.25,"sawtooth",.06,.23)}
+function togglePause(){if(over)return;paused=!paused;ui();$("msg").textContent=paused?"PAUSE":"";tone(paused?180:520,.08)}
+function startBgm(){stopBgm();if(!musicOn)return;let notes=[262,330,392,330,294,349,440,349],i=0;bgmTimer=setInterval(()=>{if(!paused&&!over){tone(notes[i++%notes.length],.12,"triangle",.018)}},220)}
+function stopBgm(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null}}
+$("rotate").onclick=rotate;$("drop").onclick=hard;$("new").onclick=reset;$("pause").onclick=togglePause;$("pause2").onclick=togglePause;
+$("sound").onclick=()=>{soundOn=!soundOn;$("sound").textContent=soundOn?"🔊 SOUND":"🔇 SOUND"};
+$("music").onclick=()=>{musicOn=!musicOn;$("music").textContent=musicOn?"♫ BGM ON":"♫ BGM";musicOn?startBgm():stopBgm()};
+function holdButton(id,fn){let timer=null,repeat=null,el=$(id);const start=e=>{e.preventDefault();fn();el.classList.add("held");timer=setTimeout(()=>{repeat=setInterval(fn,65)},190)};const end=e=>{if(e)e.preventDefault();clearTimeout(timer);clearInterval(repeat);timer=repeat=null;el.classList.remove("held")};el.addEventListener("pointerdown",start);["pointerup","pointercancel","pointerleave"].forEach(x=>el.addEventListener(x,end))}
+holdButton("left",()=>move(-1,0));holdButton("right",()=>move(1,0));holdButton("down",()=>{if(move(0,1)){score++;ui()}});
+document.addEventListener("keydown",e=>{if(e.key==="ArrowLeft")move(-1,0);else if(e.key==="ArrowRight")move(1,0);else if(e.key==="ArrowDown")move(0,1);else if(e.key==="ArrowUp")rotate();else if(e.code==="Space"){e.preventDefault();hard()}else if(e.key.toLowerCase()==="p")togglePause()});
+let sx=0,sy=0;cv.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});cv.addEventListener("pointerup",e=>{let dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<18&&Math.abs(dy)<18)rotate();else if(Math.abs(dx)>Math.abs(dy)){let steps=Math.max(1,Math.round(Math.abs(dx)/35));for(let i=0;i<steps;i++)move(dx>0?1:-1,0)}else if(dy>45)hard()});
+document.body.addEventListener("pointerdown",()=>{try{ac()}catch(e){}},{once:true});
 reset();requestAnimationFrame(loop);
 </script></body></html>
