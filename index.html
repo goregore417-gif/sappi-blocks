@@ -25,7 +25,7 @@ body{position:fixed;inset:0}
 @media (max-width:390px){.side{width:74px}#game{max-width:calc(100vw - 94px);height:min(100%,calc((100vw - 94px)*2))}#next{width:60px;height:60px}.controls{grid-template-columns:repeat(6,minmax(42px,56px))}.ctrl{height:43px}.hint{font-size:8px}}
 </style></head>
 <body><div class="app">
-<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
+<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.1</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
 <div class="gameRow"><canvas id="game" width="300" height="600"></canvas><div class="side">
 <div class="panel">NEXT<canvas id="next" width="72" height="72"></canvas></div>
 <button class="small" id="pause">⏸ PAUSE</button><button class="small" id="sound">🔊 SOUND</button><button class="small" id="music">♫ BGM</button><button class="small" id="new">NEW</button>
@@ -88,13 +88,17 @@ cv.addEventListener("pointercancel",()=>dragging=false);
 // iPhone Safari: keep all game gestures inside the game instead of the browser.
 const gameUI=document.querySelector(".app");
 ["touchstart","touchmove","touchend","touchcancel"].forEach(type=>{
-  gameUI.addEventListener(type,e=>{ e.preventDefault(); },{passive:false});
+  gameUI.addEventListener(type,e=>{
+    if(e.target.closest("button")) return;
+    e.preventDefault();
+  },{passive:false});
 });
 ["dblclick","contextmenu","selectstart","dragstart"].forEach(type=>{
   gameUI.addEventListener(type,e=>e.preventDefault());
 });
 let lastTapGuard=0;
 gameUI.addEventListener("touchend",e=>{
+  if(e.target.closest("button")) return;
   const now=Date.now();
   if(now-lastTapGuard<400)e.preventDefault();
   lastTapGuard=now;
