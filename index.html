@@ -25,7 +25,7 @@ body{position:fixed;inset:0}
 @media (max-width:390px){.side{width:74px}#game{max-width:calc(100vw - 94px);height:min(100%,calc((100vw - 94px)*2))}#next{width:60px;height:60px}.controls{grid-template-columns:repeat(6,minmax(42px,56px))}.ctrl{height:43px}.hint{font-size:8px}}
 </style></head>
 <body><div class="app">
-<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.3</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
+<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.4</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
 <div class="gameRow"><canvas id="game" width="300" height="600"></canvas><div class="side">
 <div class="panel">NEXT<canvas id="next" width="72" height="72"></canvas></div>
 <button class="small" id="pause">⏸ PAUSE</button><button class="small" id="sound">🔊 SOUND</button><button class="small" id="music">♫ BGM</button><button class="small" id="new">NEW</button>
@@ -55,7 +55,8 @@ function findLines(){
  const n=rows.length;
  lineSound(n);$("msg").textContent=["","SINGLE!","DOUBLE!!","TRIPLE!!!","QUAD!!!!"][n]||"CLEAR!";
  cv.classList.remove("flash");void cv.offsetWidth;cv.classList.add("flash");
- [...rows].sort((a,b)=>b-a).forEach(y=>{board.splice(y,1);board.unshift(Array(W).fill(0))});
+ const kept=board.filter((_,y)=>!rows.includes(y));
+ board=[...Array.from({length:n},()=>Array(W).fill(0)),...kept];
  lines+=n;score+=[0,100,320,560,900][n]*level;level=1+Math.floor(lines/10);
  clearing=[];clearUntil=0;clearRemain=0;ui();spawn();
 }
