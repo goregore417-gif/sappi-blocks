@@ -25,7 +25,7 @@ body{position:fixed;inset:0}
 @media (max-width:390px){.side{width:74px}#game{max-width:calc(100vw - 94px);height:min(100%,calc((100vw - 94px)*2))}#next{width:60px;height:60px}.controls{grid-template-columns:repeat(6,minmax(42px,56px))}.ctrl{height:43px}.hint{font-size:8px}}
 </style></head>
 <body><div class="app">
-<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.2</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
+<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.3</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
 <div class="gameRow"><canvas id="game" width="300" height="600"></canvas><div class="side">
 <div class="panel">NEXT<canvas id="next" width="72" height="72"></canvas></div>
 <button class="small" id="pause">⏸ PAUSE</button><button class="small" id="sound">🔊 SOUND</button><button class="small" id="music">♫ BGM</button><button class="small" id="new">NEW</button>
@@ -49,11 +49,24 @@ function hit(x,y,m){for(let j=0;j<m.length;j++)for(let i=0;i<m[j].length;i++)if(
 function onGround(){return hit(piece.x,piece.y+1,piece.m)}
 function refreshLock(){groundedAt=onGround()?performance.now():null}
 function merge(){piece.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&piece.y+j>=0)board[piece.y+j][piece.x+i]=v}));groundedAt=null;findLines()}
-function findLines(){let rows=[];for(let y=0;y<H;y++)if(board[y].every(Boolean))rows.push(y);if(!rows.length){spawn();return}clearing=rows;clearUntil=performance.now()+220;lineSound(rows.length);$("msg").textContent=["","SINGLE!","DOUBLE!!","TRIPLE!!!","QUAD!!!!"][rows.length]||"CLEAR!";cv.classList.remove("flash");void cv.offsetWidth;cv.classList.add("flash")}
+function findLines(){
+ let rows=[];for(let y=0;y<H;y++)if(board[y].every(Boolean))rows.push(y);
+ if(!rows.length){spawn();return}
+ const n=rows.length;
+ lineSound(n);$("msg").textContent=["","SINGLE!","DOUBLE!!","TRIPLE!!!","QUAD!!!!"][n]||"CLEAR!";
+ cv.classList.remove("flash");void cv.offsetWidth;cv.classList.add("flash");
+ [...rows].sort((a,b)=>b-a).forEach(y=>{board.splice(y,1);board.unshift(Array(W).fill(0))});
+ lines+=n;score+=[0,100,320,560,900][n]*level;level=1+Math.floor(lines/10);
+ clearing=[];clearUntil=0;clearRemain=0;ui();spawn();
+}
 function finishClear(){let n=clearing.length;[...clearing].sort((a,b)=>b-a).forEach(y=>{board.splice(y,1);board.unshift(Array(W).fill(0))});lines+=n;score+=[0,100,320,560,900][n]*level;level=1+Math.floor(lines/10);clearing=[];ui();spawn()}
 function move(dx,dy){if(over||paused||clearing.length)return false;if(!hit(piece.x+dx,piece.y+dy,piece.m)){piece.x+=dx;piece.y+=dy;if(dx){tone(230,.025);refreshLock()}else groundedAt=null;return true}if(dy&&groundedAt===null)groundedAt=performance.now();return false}
 function rotate(){if(over||paused||clearing.length)return;let m=piece.m[0].map((_,i)=>piece.m.map(r=>r[i]).reverse());for(let k of [0,-1,1,-2,2])if(!hit(piece.x+k,piece.y,m)){piece.x+=k;piece.m=m;tone(420,.04);refreshLock();break}}
-function hard(){if(over||paused||clearing.length)return;let n=0;while(!hit(piece.x,piece.y+1,piece.m)){piece.y++;n++}score+=n*2;tone(130,.07,"square");merge();ui()}
+function hard(){
+ if(over||paused||clearing.length)return;
+ let n=0;while(!hit(piece.x,piece.y+1,piece.m)){piece.y++;n++}
+ score+=n*2;tone(130,.07,"square");groundedAt=performance.now();ui();
+}
 function ghostY(){let y=piece.y;while(!hit(piece.x,y+1,piece.m))y++;return y}
 function ui(){$("score").textContent=score;$("lines").textContent=lines;$("level").textContent=level;$("pause").textContent=paused?"▶ RESUME":"⏸ PAUSE"}
 function cell(c,x,y,v,a=1){c.globalAlpha=a;c.fillStyle=colors[v];c.fillRect(x*S+1,y*S+1,S-2,S-2);c.globalAlpha=1}
