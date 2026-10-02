@@ -25,7 +25,7 @@ body{position:fixed;inset:0}
 @media (max-width:390px){.side{width:74px}#game{max-width:calc(100vw - 94px);height:min(100%,calc((100vw - 94px)*2))}#next{width:60px;height:60px}.controls{grid-template-columns:repeat(6,minmax(42px,56px))}.ctrl{height:43px}.hint{font-size:8px}}
 </style></head>
 <body><div class="app">
-<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.1</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
+<div class="top"><div class="title">SAPPI BLOCKS <small>v0.4.2</small></div><div class="stats"><span>SCORE <b id="score">0</b></span><span>LINES <b id="lines">0</b></span><span>LV <b id="level">1</b></span></div></div>
 <div class="gameRow"><canvas id="game" width="300" height="600"></canvas><div class="side">
 <div class="panel">NEXT<canvas id="next" width="72" height="72"></canvas></div>
 <button class="small" id="pause">⏸ PAUSE</button><button class="small" id="sound">🔊 SOUND</button><button class="small" id="music">♫ BGM</button><button class="small" id="new">NEW</button>
@@ -39,7 +39,7 @@ const cv=document.querySelector("#game"),ctx=cv.getContext("2d"),nc=document.que
 const W=10,H=20,S=30,LOCK_DELAY=470;
 const colors=["","#39d8ee","#ffe04d","#c66bff","#5be27c","#ff5e66","#5595ff","#ff9e45"];
 const shapes=[[[1,1,1,1]],[[2,2],[2,2]],[[0,3,0],[3,3,3]],[[0,4,4],[4,4,0]],[[5,5,0],[0,5,5]],[[6,0,0],[6,6,6]],[[0,0,7],[7,7,7]]];
-let board,piece,nextId,score,lines,level,over,paused,last=0,groundedAt=null,clearing=[],clearUntil=0;
+let board,piece,nextId,score,lines,level,over,paused,last=0,groundedAt=null,clearing=[],clearUntil=0,clearRemain=0;
 let soundOn=true,musicOn=false,audio=null,bgmTimer=null;
 const $=id=>document.getElementById(id), rand=()=>Math.floor(Math.random()*shapes.length), clone=id=>shapes[id].map(r=>r.slice());
 
@@ -62,12 +62,31 @@ board.forEach((r,y)=>r.forEach((v,x)=>{if(v)cell(ctx,x,y,v,clearing.includes(y)?
 if(piece&&!over){let gy=ghostY();piece.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&gy+j>=0)cell(ctx,piece.x+i,gy+j,v,.18)}));piece.m.forEach((r,j)=>r.forEach((v,i)=>{if(v&&piece.y+j>=0)cell(ctx,piece.x+i,piece.y+j,v)}))}
 if(paused){ctx.fillStyle="#000b";ctx.fillRect(0,0,300,600);ctx.fillStyle="#fff";ctx.font="bold 28px system-ui";ctx.textAlign="center";ctx.fillText("PAUSED",150,300)}}
 function drawNext(){nx.fillStyle="#0a1220";nx.fillRect(0,0,72,72);let m=shapes[nextId],bs=15,ox=(72-m[0].length*bs)/2,oy=(72-m.length*bs)/2;m.forEach((r,j)=>r.forEach((v,i)=>{if(v){nx.fillStyle=colors[v];nx.fillRect(ox+i*bs+1,oy+j*bs+1,bs-2,bs-2)}}))}
-function loop(t=0){if(clearing.length&&t>=clearUntil)finishClear();if(!over&&!paused&&!clearing.length){if(groundedAt!==null&&t-groundedAt>=LOCK_DELAY){merge();ui();last=t}else if(t-last>Math.max(110,780-(level-1)*55)){move(0,1);last=t}}draw();requestAnimationFrame(loop)}
+function loop(t=0){
+ if(!paused&&clearing.length&&t>=clearUntil) finishClear();
+ if(!over&&!paused&&!clearing.length){
+   if(groundedAt!==null&&t-groundedAt>=LOCK_DELAY){merge();ui();last=t}
+   else if(t-last>Math.max(110,780-(level-1)*55)){move(0,1);last=t}
+ }
+ draw();requestAnimationFrame(loop);
+}
 
 function ac(){if(!audio)audio=new (window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume();return audio}
 function tone(freq,d=.05,type="sine",vol=.035,delay=0){if(!soundOn)return;let a=ac(),o=a.createOscillator(),g=a.createGain(),now=a.currentTime+delay;o.type=type;o.frequency.setValueAtTime(freq,now);g.gain.setValueAtTime(vol,now);g.gain.exponentialRampToValueAtTime(.001,now+d);o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+d)}
 function lineSound(n){for(let i=0;i<n;i++)tone(420+i*150,.12,i==3?"sawtooth":"square",.045,i*.055);if(n===4)tone(1100,.25,"sawtooth",.06,.23)}
-function togglePause(){if(over)return;paused=!paused;if(!paused&&groundedAt!==null)groundedAt=performance.now();ui();$("msg").textContent=paused?"PAUSE":"";tone(paused?180:520,.08)}
+function togglePause(){
+ if(over)return;
+ const now=performance.now();
+ if(!paused){
+   paused=true;
+   if(clearing.length) clearRemain=Math.max(0,clearUntil-now);
+ }else{
+   paused=false;
+   if(clearing.length) clearUntil=now+clearRemain;
+   if(groundedAt!==null) groundedAt=now;
+ }
+ ui();$("msg").textContent=paused?"PAUSE":"";tone(paused?180:520,.08);
+}
 function startBgm(){stopBgm();if(!musicOn)return;let notes=[262,330,392,330,294,349,440,349],i=0;bgmTimer=setInterval(()=>{if(!paused&&!over)tone(notes[i++%notes.length],.12,"triangle",.018)},220)}
 function stopBgm(){if(bgmTimer){clearInterval(bgmTimer);bgmTimer=null}}
 
